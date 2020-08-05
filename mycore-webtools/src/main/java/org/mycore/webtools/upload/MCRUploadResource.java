@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -195,8 +194,6 @@ public class MCRUploadResource {
     private List<MCRMetaClassification> getClassifications(String classifications) {
         final MCRCategoryDAO dao = MCRCategoryDAOFactory.getInstance();
         final List<MCRCategoryID> categoryIDS = Stream.of(classifications)
-            .filter(Objects::nonNull)
-            .filter(Predicate.not(String::isBlank))
             .flatMap(c -> Stream.of(c.split(",")))
             .filter(Predicate.not(String::isBlank))
             .filter(cv -> cv.contains(":"))
@@ -206,8 +203,11 @@ public class MCRUploadResource {
             }).collect(Collectors.toList());
 
         if (!categoryIDS.stream().allMatch(dao::exist)) {
-            final String parsedIDS = categoryIDS.stream().map(Object::toString).collect(Collectors.joining(","));
-            throw new MCRException(String.format(Locale.ROOT, "One of the Categories \"%s\" was not found", parsedIDS));
+            final String parsedIDS = categoryIDS.stream()
+                    .filter(Predicate.not(dao::exist))
+                    .map(Object::toString)
+                    .collect(Collectors.joining(","));
+            throw new MCRException(String.format(Locale.ROOT, "The Categories \"%s\" do not exist!", parsedIDS));
         }
 
         return categoryIDS.stream()
