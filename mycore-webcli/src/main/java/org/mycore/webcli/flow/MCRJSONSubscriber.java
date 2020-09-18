@@ -52,6 +52,7 @@ public class MCRJSONSubscriber implements Flow.Subscriber<JsonObject> {
     @Override
     public void onNext(JsonObject item) {
         if (!this.session.isOpen()) {
+            LogManager.getLogger().warn("WebSocket already closed, lossing '{}' and everything after.", item);
             subscription.cancel();
         }
         LogManager.getLogger().info("Sending json: " + item.toString());
